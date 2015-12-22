@@ -1,3 +1,4 @@
 from __future__ import absolute_import
 from .star_smiles_parser import StarSmilesParser
+from .star_smiles_parser import parse_star_smiles
 from .parser_exceptions import StarSmilesFormatError

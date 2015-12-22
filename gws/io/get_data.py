@@ -5,7 +5,7 @@ import numpy as np
 import re
 from gws.io.smiles2graph import smiles2graph
 from gws.io.star_smiles import StarSmilesFormatError
-from gws.io.star_smiles import StarSmilesParser
+from gws.io.star_smiles import parse_star_smiles
 from gws.isomorph.symmetric import get_filtered_addons
 from rdkit import Chem
 
@@ -21,8 +21,8 @@ def star_smiles_to_mol(star_smiles):
     граф в виде словаря, описывающего молекулу.
     """
     try:
-        parser = StarSmilesParser(star_smiles)
-        frame_mol = single_atom_to_graph(parser) or smiles2graph(parser)
+        parser_result = parse_star_smiles(star_smiles)
+        frame_mol = single_atom_to_graph(parser_result) or smiles2graph(parser_result)
         return frame_mol
     except StopIteration:
         print('Ошибка в star-smiles. Неожиданный конец строки')

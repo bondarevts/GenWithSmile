@@ -19,16 +19,24 @@ from parser_exceptions import StarSmilesFormatError
 
 
 StarSmilesBlock = namedtuple('StarSmilesBlock', ['data', 'position_flag'])
+ParserResults = namedtuple('ParserResults', ['smiles', 'attach_bonds', 'insert_positions',
+                                             'attach_positions', 'fragment_pos'])
 
 
-class StarSmilesPart(object):
-    def __init__(self, smiles, bond_marks=None, position_flag=PositionFlag.none):
-        self.smiles = smiles
-        self.bond_marks = bond_marks or []
-        self.position_flag = position_flag
+class StarSmilesPart(namedtuple('StarSmilesPart', ['smiles', 'bond_marks', 'position_flag'])):
+    def __new__(cls, smiles, bond_marks=None, position_flag=PositionFlag.none):
+        return super(StarSmilesPart, cls).__new__(cls, smiles, bond_marks, position_flag)
 
-    def __repr__(self):
-        return 'SmilesPart({}, {}, {})'.format(self.smiles, self.bond_marks, self.position_flag)
+
+def parse_star_smiles(star_smiles):
+    parser = StarSmilesParser(star_smiles)
+    return ParserResults(
+        smiles=parser.smiles,
+        attach_bonds=parser.attach_bonds,
+        insert_positions=parser.insert_positions,
+        attach_positions=parser.attach_positions,
+        fragment_pos=parser.fragment_pos
+    )
 
 
 class StarSmilesParser(object):
