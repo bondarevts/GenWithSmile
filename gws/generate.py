@@ -1,19 +1,16 @@
 # coding=utf-8
-import re
-import itertools
 import numpy as np
+from itertools import izip
 
 from rdkit import Chem
 
 from gws import Molecule
-
 from gws.isomorph import graph_kernel as gk
-from gws.isomorph import symmetric, internal
+from gws.isomorph import internal
+from gws.isomorph import symmetric
 
 
 def generate(num_iter, m0, adds, is_test=0, gk_param=gk.get_def_par(), score=None):
-    #  {'g': gr, 'gh': gr2, 'atom': atom, 'atom_pos': ap, 'hb': hb, 'sb': sb,
-    #  'charge': charge, 'poih': poih, 'poia': poia}
     poih = m0.poih
     poia = m0.poia
     poif = m0.poif
@@ -27,14 +24,12 @@ def generate(num_iter, m0, adds, is_test=0, gk_param=gk.get_def_par(), score=Non
         list_mols = list_mols[:1] + curr_m
 
     for i in range(1, num_iter):
-        # nl_m = []
         nl_m_len = len(list_mols)
         for molecule in curr_m:
             poih = molecule.poih
             poia = molecule.poia
             # Check symmetric
             invh, inva, invf, invtpa = symmetric.get_symmetric(molecule, poih, poia, poif)
-            # generate_1
             mols = generate_1(molecule, invh, inva, invf, invtpa, adds)
             # cut
             if is_test == 0:
@@ -63,7 +58,7 @@ def filter_mols(molecules, score):
     scores = score.get_score(smiles, rdkit_mols)
     if score.is_filter:
         # use as binary filter
-        return [mol for mol, scr in itertools.izip(molecules, scores) if scr]
+        return [mol for mol, scr in izip(molecules, scores) if scr]
     else:
         max_mols = score.max_mols
         return [x for k, (y, x) in enumerate(sorted(zip(scores, molecules))) if k < max_mols]
@@ -71,7 +66,7 @@ def filter_mols(molecules, score):
 
 def unconcat(nl_m, new_mols):
     mask = np.ones((np.shape(new_mols)[0], 1))
-    for (i, new_mol) in enumerate(new_mols):
+    for i, new_mol in enumerate(new_mols):
         for j in nl_m:
             somorph = graphs_isomorph_mol(new_mol, j)
             if somorph > 0:
@@ -90,25 +85,23 @@ def graphs_isomorph_mol(mol1, mol2):
 
 
 def generate_1(mol, invh, inva, invf, invtpa, adds_in):
-
     generated_mols = []
     for i in invh:
-        generated_mols += get_mols_with_attachs(i, mol, adds_in['attach'])
+        generated_mols.extend(get_mols_with_attachs(i, mol, adds_in['attach']))
 
     for i in inva:
-        generated_mols += get_mols_with_inserts(i, mol, adds_in['insert'])
+        generated_mols.extend(get_mols_with_inserts(i, mol, adds_in['insert']))
 
     for i in invf:
-        generated_mols += get_mols_with_fragments(i, mol, adds_in['fragment'])
+        generated_mols.extend(get_mols_with_fragments(i, mol, adds_in['fragment']))
 
     for i in invtpa:
-        generated_mols += get_mols_with_bond(i, mol, adds_in['attach'])
+        generated_mols.extend(get_mols_with_bond(i, mol, adds_in['attach']))
 
     return generated_mols
 
 
 def get_mols_with_attachs(target_point, mol0, addons):
-
     rdkit_mol0 = mol0.rdkit_mol
     poia0 = mol0.poia
     poih0 = mol0.poih
@@ -125,7 +118,7 @@ def get_mols_with_attachs(target_point, mol0, addons):
     for attach in addons:
         if attach['attach_type']:
             continue
-        for mh_ad, mh_index in itertools.izip(attach['bond'], attach['attach_index']):
+        for mh_ad, mh_index in izip(attach['bond'], attach['attach_index']):
             target_free_at = attach['rdkit_mol'].GetAtomWithIdx(mh_index).GetTotalValence() - \
                 attach['rdkit_mol'].GetAtomWithIdx(mh_index).GetExplicitValence()
             if target_free_b >= mh_ad and mh_ad <= target_free_at:
@@ -173,7 +166,6 @@ def get_mols_with_attachs(target_point, mol0, addons):
 
 
 def get_mols_with_inserts(target_point, mol0, addons):
-
     rdkit_mol0 = mol0.rdkit_mol
     poia0 = mol0.poia
     poih0 = mol0.poih
@@ -272,22 +264,9 @@ def get_mols_with_fragments(target_point, mol0, fragments):
     for fragment in fragments:
         if len(neighbors) not in fragment['points']:
             continue
-        # for indexes in itertools.product(*iter_index):
-        #     if len(indexes) == len(set(indexes)):
-        #         # allowed_bonds = [fragment['bonds'][i] for i in indexes]
-        #         allowed_bonds = [[1, 2] for i in indexes]
-        #         for bonds in itertools.product(*allowed_bonds):
-        #             is_ok = True
-        #             for index, bond in itertools.izip(indexes, bonds):
-        #                 _atom = fragment['rdkit_mol'].GetAtomWithIdx(index)
-        #                 free_val = _atom.GetTotalValence() - _atom.GetExplicitValence()
-        #                 if free_val < bond:
-        #                     is_ok = False
-        #             if not ((vals >= np.asarray(bonds)).all() and is_ok):
-        #                 continue
         for indexes in fragment['points'][len(neighbors)]['index']:
             is_ok = True
-            for index, bond in itertools.izip(indexes, bonds):
+            for index, bond in izip(indexes, bonds):
                 _atom = fragment['rdkit_mol'].GetAtomWithIdx(index)
                 free_val = _atom.GetTotalValence() - _atom.GetExplicitValence()
                 if free_val < bond:
@@ -314,7 +293,7 @@ def get_mols_with_fragments(target_point, mol0, fragments):
                            bond.GetEndAtomIdx() + num_atom1,
                            bond.GetBondType())
 
-            for bond_type, neibhbor, target in itertools.izip(bonds, neighbors, indexes):
+            for bond_type, neibhbor, target in izip(bonds, neighbors, indexes):
                 bond = Chem.rdchem.BondType.SINGLE
                 if bond_type == 1:
                     bond = Chem.rdchem.BondType.SINGLE
@@ -349,7 +328,7 @@ def get_mols_with_fragments(target_point, mol0, fragments):
                    [i - 1for i in poih.tolist() if i > target_point]
             poih = np.asarray(poih)
             histoty_str = ''
-            for index, bond in itertools.izip(indexes, bonds):
+            for index, bond in izip(indexes, bonds):
                 histoty_str += 'a -' + str(index) + '-' + str(bond) + '-'
             histoty_str += fragment['name']
             hist.append(histoty_str)
@@ -390,7 +369,7 @@ def get_mols_with_bond(target_points, mol0, addons):
     for attach in addons:
         if not attach['attach_type']:
             continue
-        for mh_ad, mh_index in itertools.izip(attach['bond'], attach['attach_index']):
+        for mh_ad, mh_index in izip(attach['bond'], attach['attach_index']):
             target_free_at_f = attach['rdkit_mol'].GetAtomWithIdx(mh_index[0]).GetTotalValence() - \
                 attach['rdkit_mol'].GetAtomWithIdx(mh_index[0]).GetExplicitValence()
             target_free_at_s = attach['rdkit_mol'].GetAtomWithIdx(mh_index[1]).GetTotalValence() - \
@@ -445,38 +424,3 @@ def get_mols_with_bond(target_points, mol0, addons):
                                 'history': hist, 'rdkit_mol': outmol})
             mols_with_attachs.append(mol_out)
     return mols_with_attachs
-    # target_free_at_f = rdkit_mol0.GetAtomWithIdx(target_point_first).GetTotalValence() - \
-    #     rdkit_mol0.GetAtomWithIdx(target_point_first).GetExplicitValence()
-    # target_free_at_s = rdkit_mol0.GetAtomWithIdx(target_point_second).GetTotalValence() - \
-    #     rdkit_mol0.GetAtomWithIdx(target_point_second).GetExplicitValence()
-    # if target_free_at_f >= bond_type and target_free_at_s >= bond_type:
-    #     poia = poia0.copy()
-    #     poih = poih0.copy()
-    #     poia_add = poia_add0.copy()
-    #     poih_add = poih_add0.copy()
-    #     hist = list(hist0)
-    #
-    #     new_rdkitmol = rdkit_mol0.__copy__()
-    #     em = Chem.EditableMol(new_rdkitmol)
-    #
-    #     bond = Chem.rdchem.BondType.SINGLE
-    #     if bond_type == 1:
-    #         bond = Chem.rdchem.BondType.SINGLE
-    #     elif bond_type == 2:
-    #         bond = Chem.rdchem.BondType.DOUBLE
-    #     elif bond_type == 3:
-    #         bond = Chem.rdchem.BondType.TRIPLE
-    #     elif bond_type == 4:
-    #         bond = Chem.rdchem.BondType.QUADRUPLE
-    #     elif bond_type == 5:
-    #         bond = Chem.rdchem.BondType.QUINTUPLE
-    #     em.AddBond(target_point_first, target_point_second, bond)
-    #     outmol = em.GetMol()
-    #     Chem.SanitizeMol(outmol)
-    #     hist_str = 'b-' + str(target_point_first) + '-' + str(target_point_second) + '-'
-    #     hist_str += str(bond_type)
-    #     hist.append(hist_str)
-    #     mol_out = Molecule({'poia': poia, 'poih': poih, 'poia_add': poia_add,
-    #                         'poih_add': poih_add, 'smiles': Chem.MolToSmiles(outmol),
-    #                         'history': hist, 'rdkit_mol': outmol})
-    #     return [mol_out]

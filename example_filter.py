@@ -1,20 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # coding=utf-8
 from __future__ import print_function
-import sys
 
 import timeit
 import numpy as np
 from rdkit import Chem
 
-from gws import generate as g
-from gws.io import get_data as gd
-from gws.isomorph import graph_kernel as gk
-from gws import molecule_from_star_smiles
-
-if sys.version_info[:2] != (2, 7):
-    print('Error: Python 2.7 is required ({}.{} detected).'.format(*sys.version_info[0:2]))
-    sys.exit(-1)
+import gws
+import gws.io
+from gws.isomorph import graph_kernel
 
 
 class FilterExample(object):
@@ -105,10 +99,10 @@ def main():
                    'insert': ['{Cl}', '{O}'], 'names_in': ['CCl', 'O']}
 
     # Преобразование star-smiles в молекулу
-    frame = molecule_from_star_smiles(start_star_smiles)
+    frame = gws.molecule_from_star_smiles(start_star_smiles)
 
     # Преобразование аддонов в молекулы
-    addons = gd.data_prep_addons(addons_data)
+    addons = gws.io.data_prep_addons(addons_data)
 
     print('Test GWS with filter score')
     patterns = ['[R0;D2][R0;D2][R0;D2][R0;D2]', '[CR0]=[CR0][CR0]=[CR0]', 'CC(=S)N']
@@ -121,15 +115,15 @@ def main():
     score_filter = FilterExample(alerts)
 
     # Проверка на изоморфизм через GK
-    gk_param = gk.get_def_par()
+    gk_param = graph_kernel.get_def_par()
     gk_param['p'] = 0.9999
     n = 1  # Количество добовляемых аттачей
     start_time = timeit.default_timer()
 
     # Генерация первого поколения молекул
     # к аддонам здесь ничего не добавляется
-    list_mols, list_mols_smiles = g.generate(n, frame, addons, gk_param=gk_param,
-                                             score=score_filter)
+    list_mols, list_mols_smiles = gws.generate(n, frame, addons, gk_param=gk_param,
+                                               score=score_filter)
     print('GK time = {}'.format(timeit.default_timer() - start_time))
 
     print(len(list_mols_smiles))
@@ -141,15 +135,15 @@ def main():
     score_filter = NotFilterExample(5)
 
     # Проверка на изоморфизм через GK
-    gk_param = gk.get_def_par()
+    gk_param = graph_kernel.get_def_par()
     gk_param['p'] = 0.9999
     n = 1  # Количество добовляемых аттачей
     start_time = timeit.default_timer()
 
     # Генерация первого поколения молекул
     # к аддонам здесь ничего не добавляется
-    list_mols, list_mols_smiles = g.generate(n, frame, addons, gk_param=gk_param,
-                                             score=score_filter)
+    list_mols, list_mols_smiles = gws.generate(n, frame, addons, gk_param=gk_param,
+                                               score=score_filter)
     print('GK time = {}'.format(timeit.default_timer() - start_time))
 
     print(len(list_mols_smiles))

@@ -1,10 +1,9 @@
 # coding=utf-8
-
-from io.get_data import star_smiles_to_mol
+from __future__ import absolute_import
+from gws.io import star_smiles_to_mol
 
 
 def molecule_from_star_smiles(star_smiles):
-    star_smiles = star_smiles
     raw_mol = star_smiles_to_mol(star_smiles)
     return Molecule(raw_mol)
 

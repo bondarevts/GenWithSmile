@@ -1,1 +1,3 @@
-from datatypes import Molecule, molecule_from_star_smiles
+from datatypes import Molecule
+from datatypes import molecule_from_star_smiles
+from generate import generate

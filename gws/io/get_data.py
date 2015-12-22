@@ -5,7 +5,6 @@ import numpy as np
 from rdkit import Chem
 
 from itertools import izip
-from collections import namedtuple
 from gws.io.smiles2graph import smiles2graph
 from gws.isomorph.symmetric import get_filtered_addons
 from gws.star_smiles.parser_exceptions import StarSmilesFormatError
@@ -14,21 +13,17 @@ from gws.star_smiles.star_smiles_parser import StarSmilesParser
 
 def star_smiles_to_mol(star_smiles):
     """
+    Parameters
+    ----------
     star_smiles: строка в формате star-smiles
-    return: граф в виде словаря, описывающего молекулу.
+
+    Returns
+    -------
+    граф в виде словаря, описывающего молекулу.
     """
     try:
         parser = StarSmilesParser(star_smiles)
         frame_mol = single_atom_to_graph(parser) or smiles2graph(parser)
-
-        '''
-        atom_pos = frame_mol['atom_pos']
-        frame_mol['poia'] = _get_interest_atom_indexes(atom_pos, parser.insert_positions)
-        frame_mol['poih'] = _get_interest_atom_indexes(atom_pos, parser.attach_positions)
-        frame_mol['poia_add'] = np.array([], dtype=int)
-        frame_mol['poih_add'] = np.array([], dtype=int)
-        frame_mol['history'] = []
-        '''
         return frame_mol
     except StopIteration:
         print('Ошибка в star-smiles. Неожиданный конец строки')
@@ -196,28 +191,22 @@ def _shift_values_greater(values, threshold, shift):
 
 def single_atom_to_graph(atom):
     """
+    Parameters
+    ----------
     atom: атом, для которого генерируется граф
 
     Если atom совпадает с одним из списка atom_data, 
     то есть возможность быстро преобразовать его в граф
 
-    return: граф, если условия выполнены, иначе возвращает None
+    Returns
+    -------
+    граф, если условия выполнены, иначе возвращает None
     """
-    AtomData = namedtuple('AtomData', ['valence'])
+    single_atoms = {'C', 'N', 'Cl', 'O', 'I', 'Br'}
 
-    atom_data = {
-        'C':  AtomData(valence=4),
-        'N':  AtomData(valence=3),
-        'Cl': AtomData(valence=1),
-        'O':  AtomData(valence=2),
-        'I':  AtomData(valence=1),
-        'Br':  AtomData(valence=1),
-    }
-
-    if atom.smiles not in atom_data:
+    if atom.smiles not in single_atoms:
         return
 
-    bond_multiplexity = {'-': 1, '=': 2, '#': 3}
     mol_data = {
         'poia': np.array([0]),
         'poih': np.array([0]),
@@ -227,10 +216,13 @@ def single_atom_to_graph(atom):
         'rdkit_mol': Chem.MolFromSmiles(atom.smiles)
     }
     if atom.attach_bonds:
+        bond_multiplexity = {'-': 1, '=': 2, '#': 3}
         ind, bound = atom.attach_bonds[0]
-        mol_data['bound'] = bond_multiplexity[bound]
-        mol_data['name'] = '1' + bound
-        mol_data['attach_index'] = 0
+        mol_data.update({
+            'bound': bond_multiplexity[bound],
+            'name': '1' + bound,
+            'attach_index': 0
+        })
         mol_data = [mol_data]
 
     return mol_data

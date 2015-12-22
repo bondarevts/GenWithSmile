@@ -12,7 +12,6 @@ def get_smiles_atom_out_order(mol):
 
 
 def smiles2graph(star_smiles_parser):
-
     mol = Chem.MolFromSmiles(star_smiles_parser.smiles)
     Chem.Kekulize(mol)
     smiles_no_chiral = Chem.MolToSmiles(mol, rootedAtAtom=0)
