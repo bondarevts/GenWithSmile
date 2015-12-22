@@ -1,8 +1,9 @@
-import re
 import unittest
-import parser
 
+import parser
+import re
 from parser_exceptions import MetaSmilesFormatError
+
 
 class MetaSmilesParserTests(unittest.TestCase):
     def test_no_marks(self):

@@ -1,14 +1,13 @@
 # encoding: utf-8
-import re
-import numpy as np
-
-from rdkit import Chem
-
 from itertools import izip
+
+import numpy as np
+import re
 from gws.io.smiles2graph import smiles2graph
+from gws.io.star_smiles import StarSmilesFormatError
+from gws.io.star_smiles import StarSmilesParser
 from gws.isomorph.symmetric import get_filtered_addons
-from gws.star_smiles.parser_exceptions import StarSmilesFormatError
-from gws.star_smiles.star_smiles_parser import StarSmilesParser
+from rdkit import Chem
 
 
 def star_smiles_to_mol(star_smiles):
